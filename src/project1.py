@@ -1,6 +1,8 @@
+import csv
+
 # This function should open a data file in csv, and transform it into a usable format 
 def preprocess():
-    return
+    
 
 # This function should build a supervised NB model
 def train_supervised():
