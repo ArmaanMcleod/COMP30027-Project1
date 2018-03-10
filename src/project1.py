@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 import csv
 from collections import defaultdict
+
 # This function should open a data file in csv, and transform it into a usable format 
 def preprocess():
-    filepath = "../datasets/car-dos.csv"
+    filepath = "../datasets/cars-train.csv"
 
 
     df = pd.read_csv(filepath, header = None)
@@ -45,7 +46,7 @@ def predict_supervised(probList,testrow):
             if (possibleClass,testrow[i]) in probList[i]: 
                 prob = prob * probList[i][(possibleClass,testrow[i])]
             else : 
-                prob=prob * 0.0000001 #epsilon 
+                prob=prob * 0.000000000001 #epsilon 
         classChance.append(prob) #add the item to the list
   
             #here we get the highest probability and match it to the class
