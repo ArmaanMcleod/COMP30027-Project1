@@ -1,8 +1,6 @@
 import csv
-import numpy as np  
-import pandas as pd
-import csv
 from collections import defaultdict
+from pprint import pprint
 
 # This function should open a data file in csv, and transform it into a usable format 
 def preprocess(filename):
@@ -28,9 +26,21 @@ def train_supervised(training_data):
 
     print(priors)
 
-    posteriers = []
+    d = defaultdict(lambda : defaultdict(lambda : defaultdict(int)))
     for line in training_data:
-        pass
+        attributes = line[:-1]
+        class_name = line[-1]
+        for attribute, value in enumerate(attributes):
+            d[class_name][attribute][value] += 1
+
+    
+
+
+            
+
+
+
+
 
 
 # This function should predict the class for a set of instances, based on a trained model 
