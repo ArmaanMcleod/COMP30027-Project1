@@ -1,14 +1,16 @@
 import numpy as np  
 import pandas as pd
 import csv
+from pprint import pprint
 from collections import defaultdict
 
 # This function should open a data file in csv, and transform it into a usable format 
 def preprocess():
-    filepath = "../datasets/cars-train.csv"
-
+    filepath = "../datasets/car-dos.csv"
+  
 
     df = pd.read_csv(filepath, header = None)
+    #df.replace('?', np.NaN)
     return df
 
 # This function should build a supervised NB model
@@ -80,12 +82,14 @@ def evaluate_unsupervised():
     return
 
 #load in test data
-testdata = "../datasets/cars-test.csv"
+testdata = "../datasets/car-dos.csv"
 testcsv = pd.read_csv(testdata, header = None)
 #preprocess the data
 df = preprocess()
 #train the data
 probs, classes = train_supervised()
 #evaluate the data 
+
 evaluate_supervised(testcsv)
+pprint(probs)
 
