@@ -34,21 +34,40 @@ def train_supervised(training_data):
         col = line[-1]
         priors[col] += 1
 
+    # update dictionary with probabilites instead of counts
     priors = {k: v / num_lines for k, v in priors.items()}
 
+    # create posterier data structure with triple nested defaultdicts
+    # perhaps a more simplified data structure could be used here
+    # initialising int here initially for storing frequencies
     posterier = defaultdict(lambda : defaultdict(lambda : defaultdict(int)))
+
+    # Loop over each line in preprocessed training data
     for line in training_data:
+
+        # obtain class and attributes
         attributes = line[:-1]
         class_name = line[-1]
-        for attribute, value in enumerate(attributes):
-            posterier[class_name][attribute][value] += 1
+
+        # count each item
+        # using indices as attribute headers since not given in dataset
+        # perhaps datasets could be modified to include header names
+        for attribute, freq in enumerate(attributes):
+            posterier[class_name][attribute][freq] += 1
  
+    # transform posterier counts into probabilities
     for class_name in posterier:
         for attribute in posterier[class_name]:
-            sums = sum(posterier[class_name][attribute].values())
-            for count in posterier[class_name][attribute]:
-                posterier[class_name][attribute][count] /= sums
 
+            # sum counts over each dict
+            # This will be the same accross each class
+            sums = sum(posterier[class_name][attribute].values())
+
+            # update to probabilites by dividing freq/sums
+            for freq in posterier[class_name][attribute]:
+                posterier[class_name][attribute][freq] /= sums
+
+    # return a tuple of the two above data structures
     return priors, posterier
 
 # This function should predict the class for a set of instances, based on a trained model 
