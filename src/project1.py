@@ -9,7 +9,7 @@ def preprocess(filename):
     lines = []
 
     # open file
-    with open(filename, 'r') as infile:
+    with open(filename) as infile:
 
         # convert to reader object
         reader = csv.reader(infile)
