@@ -24,16 +24,22 @@ def train_supervised(training_data):
 
     priors = {k: v / num_lines for k, v in class_counts.items()}
 
-    print(priors)
+    #print(priors)
 
-    d = defaultdict(lambda : defaultdict(lambda : defaultdict(int)))
+    counts = defaultdict(lambda : defaultdict(lambda : defaultdict(int)))
     for line in training_data:
         attributes = line[:-1]
         class_name = line[-1]
         for attribute, value in enumerate(attributes):
-            d[class_name][attribute][value] += 1
-
-    
+            counts[class_name][attribute][value] += 1
+ 
+    for class_name in counts:
+        for attribute in counts[class_name]:
+            sums = sum(counts[class_name][attribute].values())
+            for count in counts[class_name][attribute]:
+                counts[class_name][attribute][count] /= sums
+                
+    pprint(counts)
 
 
             
