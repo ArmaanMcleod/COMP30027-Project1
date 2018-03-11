@@ -91,5 +91,5 @@ probs, classes = train_supervised()
 #evaluate the data 
 
 evaluate_supervised(testcsv)
-pprint(probs)
+
 
