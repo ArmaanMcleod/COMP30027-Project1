@@ -7,10 +7,16 @@ K  = 10 # k is the number of pieces to divide the data into
 
 # This function should open a data file in csv, and transform it into a usable format 
 def preprocess():
-    filepath = "../datasets/car-dos.csv"
-  
+    filepath = "../datasets/hypothyroid-dos.csv"
+    
 
     df = pd.read_csv(filepath, header = None)
+    print(df[0].value_counts())
+    clean(df)
+    print(df[0].value_counts())
+  
+    
+    
     #df.replace('?', np.NaN)
     return df
 
@@ -33,7 +39,7 @@ def train_supervised(df):
         probList[i] = probList[i].to_dict()
         #collects the classes into an list
     classes = df[len(df.columns)-1].unique()
-    pprint(trained)
+    
     return probList, classes
 
 # This function should predict the class for a set of instances, based on a trained model 
@@ -108,11 +114,21 @@ def k_fold(fulldf):
         #train the classifer by building the probability dictionary 
         probs, classes = train_supervised(traindf)
         #evaluate the classifier 
+    
         sum+= evaluate_supervised(testdf, probs, classes)
     return sum/K       
                
            
             
+
+def clean(dataframe):
+    for index, testrow in dataframe.iterrows():
+      for i in range(0,len(testrow)):
+          if testrow[i] == '?':
+              testrow[i] = dataframe[i].value_counts().idxmax()
+  
+    return
+     
 
 def driver():
     fulldf = preprocess()
@@ -121,7 +137,7 @@ def driver():
     #train the data
     
 def non_kfold_driver():
-     filepath = "../datasets/car-dos.csv"
+    filepath = "../datasets/hypothyroid-dos.csv"
 
     df = pd.read_csv(filepath, header = None)
     #df.replace('?', np.NaN)
@@ -130,6 +146,7 @@ def non_kfold_driver():
     print(evaluate_supervised(df, probs,classes))
 
 driver()
+non_kfold_driver()
 
 
 
