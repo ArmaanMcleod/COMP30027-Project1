@@ -90,12 +90,17 @@ def predict_unsupervised():
 def evaluate_unsupervised():
     return
 
+def main():
+    datasets = ['breast-cancer-dos.csv',
+                'car-dos.csv',
+                'hypothyroid-dos.csv',
+                'mushroom-dos.csv']
+
+    for file in datasets:
+        data = preprocess(file)
+        trained_data = train_supervised(data)
+        print(trained_data)
+
+
 if __name__ == '__main__':
-    dataset = 'C:\\Users\\Alex\\Documents\\mygit\\COMP30027-Project1\\datasets\\car-dos.csv'
-    data = preprocess(dataset)
-
-    #print(data)
-
-    print(train_supervised(data))
-
-
+    main()
