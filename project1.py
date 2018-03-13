@@ -82,10 +82,8 @@ def predict_supervised(priors, posteriers, instance):
     # dictionary holding maximal for each class
     class_max = {}
 
-    # go through each class
     for class_name in posteriers:
 
-        # product accumulator
         product = 1
 
         # go over attributes of the trained data and instances at once
@@ -102,7 +100,6 @@ def predict_supervised(priors, posteriers, instance):
             else:
                 product *= EPSILON
 
-        # add accumulated values to class maximals
         class_max[class_name] = product * priors[class_name]
 
     # return a tuple of the class and maximal probability
