@@ -120,7 +120,7 @@ def k_fold(fulldf):
                
            
             
-
+#cleaning methiod removes '?' and places in it the most common value for that column
 def clean(dataframe):
     for index, testrow in dataframe.iterrows():
       for i in range(0,len(testrow)):
