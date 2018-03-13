@@ -3,6 +3,7 @@ import pandas as pd
 import csv
 from pprint import pprint
 from collections import defaultdict
+K  = 10 # k is the number of pieces to divide the data into
 
 # This function should open a data file in csv, and transform it into a usable format 
 def preprocess():
@@ -14,7 +15,7 @@ def preprocess():
     return df
 
 # This function should build a supervised NB model
-def train_supervised():
+def train_supervised(df):
     #prior probabilties
     highProb = df.groupby(len(df.columns)-1).size().div(len(df))
      
@@ -32,10 +33,11 @@ def train_supervised():
         probList[i] = probList[i].to_dict()
         #collects the classes into an list
     classes = df[len(df.columns)-1].unique()
+    pprint(trained)
     return probList, classes
 
 # This function should predict the class for a set of instances, based on a trained model 
-def predict_supervised(probList,testrow):
+def predict_supervised(probList,testrow,classes):
     
     
     
@@ -55,18 +57,18 @@ def predict_supervised(probList,testrow):
     return classes[classChance.index(max(classChance))]
 
 # This function should evaluate a set of predictions, in a supervised context 
-def evaluate_supervised(testcsv):
+def evaluate_supervised(testcsv, probs,classes):
     correct = 0
     total = 0 
     #iterate over each of the rows and pass it to the predict supervised method
     for index, testrow in testcsv.iterrows() :
-        print(testrow.tolist())
-        if predict_supervised(probs, testrow.tolist()) == testrow[len(testcsv.columns)-1]:
+        
+        if predict_supervised(probs, testrow.tolist(),classes) == testrow[len(testcsv.columns)-1]:
             correct +=1
         
             
         total +=1
-        print(correct/total)
+       
     return correct/total
 
 # This function should build an unsupervised NB model 
@@ -81,15 +83,53 @@ def predict_unsupervised():
 def evaluate_unsupervised():
     return
 
-#load in test data
-testdata = "../datasets/car-dos.csv"
-testcsv = pd.read_csv(testdata, header = None)
-#preprocess the data
-df = preprocess()
-#train the data
-probs, classes = train_supervised()
-#evaluate the data 
+def k_fold(fulldf):
+    #split array into 10 pieces
+    karrays = np.array_split(fulldf,K)
+    counter = 0 
+    sum = 0 #record results
+    
+    for i in range(0,len(karrays)):
+        counter = 0
+        testdf = karrays[i] #set the test array as one of the chunks
+        
+       
+        for j in range(0,len(karrays)):
+            #ensure that were not adding the test chunk to the array 
+            if i != j: 
+                
+               if counter == 0:
+                   counter+=1
+                   traindf = karrays[j] #initialise the data to be trained
+                   continue 
+               #concatinate all the chunks that arent the test chunk
+               traindf = pd.concat([traindf,karrays[j]],axis = 0) 
+        
+        #train the classifer by building the probability dictionary 
+        probs, classes = train_supervised(traindf)
+        #evaluate the classifier 
+        sum+= evaluate_supervised(testdf, probs, classes)
+    return sum/K       
+               
+           
+            
 
-evaluate_supervised(testcsv)
+def driver():
+    fulldf = preprocess()
+    
+    print(k_fold(fulldf))
+    #train the data
+    
+def non_kfold_driver():
+     filepath = "../datasets/car-dos.csv"
+
+    df = pd.read_csv(filepath, header = None)
+    #df.replace('?', np.NaN)
+    probs, classes = train_supervised(df)
+    
+    print(evaluate_supervised(df, probs,classes))
+
+driver()
+
 
 
