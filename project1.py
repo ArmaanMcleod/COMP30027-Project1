@@ -83,20 +83,17 @@ def predict_supervised(priors, posteriers, instance):
     class_max = {}
 
     for class_name in posteriers:
-
         product = 1
 
         # go over attributes of the trained data and instances at once
+        # get the hashed probability
         for attribute, value in zip(posteriers[class_name], instance):
-
-            # get the hashed probability
             loc = posteriers[class_name][attribute][value]
 
             # if probability is non-zero, accumulate it
+            # otherwise, accumulate the smoothing factor
             if loc:
                 product *= loc
-
-            # otherwise, accumulate the smoothing factor
             else:
                 product *= EPSILON
 
