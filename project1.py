@@ -1,4 +1,4 @@
-import csv
+from csv import reader
 from pprint import pprint
 from collections import defaultdict
 from operator import itemgetter
