@@ -7,12 +7,13 @@ K  = 10 # k is the number of pieces to divide the data into
 
 # This function should open a data file in csv, and transform it into a usable format 
 def preprocess():
-    filepath = "../datasets/hypothyroid-dos.csv"
+    filepath = "../datasets/breast-cancer-dos.csv"
     
 
     df = pd.read_csv(filepath, header = None)
     print(df[0].value_counts())
     clean(df)
+    df = df.sample(frac=1).reset_index(drop=True) #shuffles the dataframe
     print(df[0].value_counts())
   
     
@@ -31,7 +32,7 @@ def train_supervised(df):
     #this loop calculates the probabilties 
     for i in range(0,len(df.columns)-1):
         cols =[len(df.columns)-1,i]
-        trained = df.groupby(cols).size().div(len(df)).div(highProb, axis = 0,level=(len(df.columns)-1))
+        trained = df.groupby(cols).size().div(len(df)).multiply(highProb, axis = 0,level=(len(df.columns)-1))
         probList[i] = trained
     
     #converts dataframe into dictionary 
@@ -137,10 +138,10 @@ def driver():
     #train the data
     
 def non_kfold_driver():
-    filepath = "../datasets/hypothyroid-dos.csv"
+    filepath = "../datasets/car-dos.csv"
 
     df = pd.read_csv(filepath, header = None)
-    #df.replace('?', np.NaN)
+  
     probs, classes = train_supervised(df)
     
     print(evaluate_supervised(df, probs,classes))
