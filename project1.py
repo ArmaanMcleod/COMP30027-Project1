@@ -13,10 +13,10 @@ def preprocess(filename):
     with open(filename) as infile:
 
         # convert to reader object
-        reader = csv.reader(infile)
+        csv_reader = reader(infile)
 
         # loop over each line and add it to resultOnant list
-        for line in reader:
+        for line in csv_reader:
             lines.append(line)
 
     return lines
@@ -101,8 +101,15 @@ def predict_supervised(priors, posteriers, instance):
     return max(class_max.items(), key=itemgetter(1))
 
 # This function should evaluate a set of predictions, in a supervised context 
-def evaluate_supervised():
-    
+def evaluate_supervised(priors, posteriers, data):
+    correct = 0
+
+    for instance in data:
+        predict_class, _ = predict_supervised(priors, posteriers, instance)
+        if predict_class == instance[-1]:
+            correct += 1
+
+    return correct/len(data)
 
 # This function should build an unsupervised NB model 
 def train_unsupervised():
@@ -133,7 +140,11 @@ def main():
 
     # test row here
     instance = ['vhigh','vhigh', '2', '4', 'small', 'med', 'unnac']
-    print(predict_supervised(priors, posteriers, instance[:-1]))
+    predict = predict_supervised(priors, posteriers, instance[:-1])
+
+    evaluate = evaluate_supervised(priors, posteriers, data)
+
+    print(evaluate)
 
 
     #print(trained_data)
