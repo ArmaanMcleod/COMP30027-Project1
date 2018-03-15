@@ -15,7 +15,7 @@ def preprocess(filename):
         # convert to reader object
         reader = csv.reader(infile)
 
-        # loop over each line and add it to resultant list
+        # loop over each line and add it to resultOnant list
         for line in reader:
             lines.append(line)
 
@@ -23,8 +23,6 @@ def preprocess(filename):
 
 # This function should build a supervised NB model
 def train_supervised(training_data):
-
-    # posteriers probablities
     priors = defaultdict(int)
 
     # number of lines in preprocessed training data
@@ -104,7 +102,7 @@ def predict_supervised(priors, posteriers, instance):
 
 # This function should evaluate a set of predictions, in a supervised context 
 def evaluate_supervised():
-    return
+    
 
 # This function should build an unsupervised NB model 
 def train_unsupervised():
