@@ -3,7 +3,7 @@ from pprint import pprint
 from collections import defaultdict
 from operator import itemgetter
 
-# This function should open a data file in csv, and transform it into a usable format 
+# This function should open a data file in csv, and transform it into a usable format
 def preprocess(filename):
 
     # all lines in file go here
@@ -55,7 +55,7 @@ def train_supervised(training_data):
         # perhaps datasets could be modified to include header names
         for attribute, freq in enumerate(attributes):
             posteriers[class_name][attribute][freq] += 1
- 
+
     # transform posteriers counts into probabilities
     for class_name in posteriers:
         for attribute in posteriers[class_name]:
@@ -71,7 +71,7 @@ def train_supervised(training_data):
     # return a tuple of the two above data structures
     return priors, posteriers
 
-# This function should predict the class for a set of instances, based on a trained model 
+# This function should predict the class for a set of instances, based on a trained model
 def predict_supervised(priors, posteriers, instance):
 
     # epsilon value for smoothing
@@ -100,18 +100,24 @@ def predict_supervised(priors, posteriers, instance):
     # return a tuple of the class and maximal probability
     return max(class_max.items(), key=itemgetter(1))
 
-# This function should evaluate a set of predictions, in a supervised context 
+# This function should evaluate a set of predictions, in a supervised context
 def evaluate_supervised(priors, posteriers, data):
+    # keep a counter of correct instances found
     correct = 0
 
+    # go over each instance in data set
+    # get predicted class for each instance
     for instance in data:
         predict_class, _ = predict_supervised(priors, posteriers, instance)
+
+        # if class is identical to the instances last column
+        # increment the count
         if predict_class == instance[-1]:
             correct += 1
 
     return correct/len(data)
 
-# This function should build an unsupervised NB model 
+# This function should build an unsupervised NB model
 def train_unsupervised():
     return
 
