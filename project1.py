@@ -1,3 +1,5 @@
+import numpy as np
+
 from csv import reader
 from pprint import pprint
 from collections import defaultdict
@@ -118,8 +120,32 @@ def evaluate_supervised(priors, posteriers, data):
     return correct/len(data)
 
 # This function should build an unsupervised NB model
-def train_unsupervised():
-    return
+def train_unsupervised(training_data):
+    # get sorted list of classes in data set
+    classes = sorted(set(map(itemgetter(-1), training_data)))
+
+    # strip away class column from data
+    classless_data = [instance[:-1] for instance in training_data]
+
+    # List containing unsupervised NB model
+    model = []
+
+    # go over each instance in classless data
+    for instance in classless_data:
+        row = {}
+
+        # assign attribut data normally
+        for attribute, data in enumerate(instance):
+            row[attribute] = data
+
+        # get random distributions and assign them to classes
+        rand_distribution = np.random.dirichlet(np.ones(len(classes)), size=1)
+        row['distribution'] = dict(zip(classes, rand_distribution))
+
+        model.append(row)
+
+    pprint(model)
+
 
 # This function should predict the class distribution for a set of instances, based on a trained model
 def predict_unsupervised():
@@ -129,11 +155,13 @@ def predict_unsupervised():
 def evaluate_unsupervised():
     return
 
+
+
 def main():
-    datasets = ['breast-cancer-dos.csv',
-                'car-dos.csv',
-                'hypothyroid-dos.csv',
-                'mushroom-dos.csv']
+    datasets = ['breast-cancer.csv',
+                'car.csv',
+                'hypothyroid.csv',
+                'mushroom.csv']
 
     #for file in datasets:
         #data = preprocess(file)
@@ -142,6 +170,8 @@ def main():
 
     # testing on just one dataset
     data = preprocess(datasets[1])
+
+    # SUPERVISED HERE
     priors, posteriers = train_supervised(data)
 
     # test row here
@@ -151,6 +181,9 @@ def main():
     evaluate = evaluate_supervised(priors, posteriers, data)
 
     print(evaluate)
+
+    # UNSUPERVISED HERE
+    print(train_unsupervised(data))
 
 
     #print(trained_data)
