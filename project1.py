@@ -119,8 +119,8 @@ def train_unsupervised(training_data):
     # get sorted list of classes in data set
     classes = sorted(set(map(itemgetter(-1), training_data)))
 
-    # instances with attributes and distributions
-    labelled_instances = []
+    # random_distributions
+    distributions = []
 
     # priors of distribution counts
     priors = defaultdict(float)
@@ -132,30 +132,28 @@ def train_unsupervised(training_data):
         # get random distribution of classes
         rand_distribution = np.random.dirichlet(np.ones(len(classes)), size=1)
         
-        # create tupled pairs of (class, distribution)
+        # add and create tupled pairs of (class, distribution)
         class_distribution = list(zip(classes, *rand_distribution))
+        distributions.append(dict(class_distribution))
 
         # count priors
         for class_name, dist in class_distribution:
-            priors[class_name] += dist / len(training_data)
+            priors[class_name] += dist
 
-        # add attributes to a dictionary, excluding class column
-        row = dict(enumerate(instance[:-1]))
+    # posterier counts
+    posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
 
-        # add distrubution dictionary 
-        row['distribution'] = dict(class_distribution)
+    # transform into posterier probabilities
+    for instance, dist_dict in zip(training_data, distributions):
+        for class_name, dist in dist_dict.items():
+            for attribute, data in enumerate(instance[:-1]):
+                posteriers[class_name][attribute][data] += dist / priors[class_name]
 
-        labelled_instances.append(row)
+    # make sure the prior counts are also converted to probabilities
+    priors = {cs: cnt / len(training_data) for cs, cnt in priors.items()}
 
-    pprint(labelled_instances)
-
-    #for instance in labelled_instances:
-
-
-    #print(priors)
-
-    
-
+    # return a tuple of the two above data structures
+    return priors, posteriers
 
 # This function should predict the class distribution for a set of instances, based on a trained model
 def predict_unsupervised():
