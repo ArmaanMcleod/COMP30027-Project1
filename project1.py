@@ -3,6 +3,7 @@ import numpy as np
 from csv import reader
 from pprint import pprint
 from collections import defaultdict
+from itertools import chain
 from operator import itemgetter
 
 # This function should open a data file in csv, and transform it into a usable format
@@ -27,16 +28,10 @@ def preprocess(filename):
 def train_supervised(training_data):
     priors = defaultdict(int)
 
-    # number of lines in preprocessed training data
-    num_lines = len(training_data)
-
     # count prior probabilities
     for line in training_data:
         col = line[-1]
-        priors[col] += 1
-
-    # update dictionary with probabilites instead of counts
-    priors = {k: v / num_lines for k, v in priors.items()}
+        priors[col] += 1 / len(training_data)
 
     # create posteriers data structure with triple nested defaultdicts
     # perhaps a more simplified data structure could be used here
@@ -88,12 +83,12 @@ def predict_supervised(priors, posteriers, instance):
         # go over attributes of the trained data and instances at once
         # get the hashed probability
         for attribute, value in zip(posteriers[class_name], instance):
-            loc = posteriers[class_name][attribute][value]
+            prob = posteriers[class_name][attribute][value]
 
             # if probability is non-zero, accumulate it
             # otherwise, accumulate the smoothing factor
-            if loc:
-                product *= loc
+            if prob:
+                product *= prob
             else:
                 product *= EPSILON
 
@@ -124,27 +119,42 @@ def train_unsupervised(training_data):
     # get sorted list of classes in data set
     classes = sorted(set(map(itemgetter(-1), training_data)))
 
-    # strip away class column from data
-    classless_data = [instance[:-1] for instance in training_data]
+    # instances with attributes and distributions
+    labelled_instances = []
 
-    # List containing unsupervised NB model
-    model = []
+    # priors of distribution counts
+    priors = defaultdict(float)
 
-    # go over each instance in classless data
-    for instance in classless_data:
-        row = {}
+    # calculate priors of random distribtions
+    # and transform training data into randomized labelled data
+    for instance in training_data:
 
-        # assign attribut data normally
-        for attribute, data in enumerate(instance):
-            row[attribute] = data
-
-        # get random distributions and assign them to classes
+        # get random distribution of classes
         rand_distribution = np.random.dirichlet(np.ones(len(classes)), size=1)
-        row['distribution'] = dict(zip(classes, rand_distribution))
+        
+        # create tupled pairs of (class, distribution)
+        class_distribution = list(zip(classes, *rand_distribution))
 
-        model.append(row)
+        # count priors
+        for class_name, dist in class_distribution:
+            priors[class_name] += dist / len(training_data)
 
-    pprint(model)
+        # add attributes to a dictionary, excluding class column
+        row = dict(enumerate(instance[:-1]))
+
+        # add distrubution dictionary 
+        row['distribution'] = dict(class_distribution)
+
+        labelled_instances.append(row)
+
+    pprint(labelled_instances)
+
+    #for instance in labelled_instances:
+
+
+    #print(priors)
+
+    
 
 
 # This function should predict the class distribution for a set of instances, based on a trained model
