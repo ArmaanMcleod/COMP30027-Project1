@@ -3,6 +3,7 @@ import numpy as np
 from csv import reader
 from pprint import pprint
 from collections import defaultdict
+from collections import OrderedDict
 from itertools import product
 from operator import itemgetter
 
@@ -116,14 +117,19 @@ def evaluate_supervised(priors, posteriers, data):
 
 # this function should get the prior probabilities
 # the counts will be passed around instead
-def get_priors_probs(counts, training_data):
-    return {cs: cnt / len(training_data) for cs, cnt in counts.items()}
+def get_priors_probs(priors, training_data):
+    return {cs: cnt / len(training_data) for cs, cnt in priors.items()}
 
-def update_posteriers(posteriers, priors, distribution, training_data):
+# update posteriers by dividing through the class counts
+def update_posteriers(priors, distribution, training_data):
+    posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
+
     for instance, dist_dict in zip(training_data, distribution):
         for class_name, dist in dist_dict.items():
             for attribute, value in enumerate(instance):
                 posteriers[class_name][attribute][value] += dist / priors[class_name]
+
+    return posteriers
 
 # This function should build an unsupervised NB model
 def train_unsupervised(training_data):
@@ -146,68 +152,57 @@ def train_unsupervised(training_data):
         rand_distribution = np.random.dirichlet(np.ones(len(classes)), size=1)
         
         # add and create tupled pairs of (class, distribution)
+        # add as a ordered dictionary to keep ordering of classes
         class_distribution = list(zip(classes, *rand_distribution))
-        distributions.append(dict(class_distribution))
+        distributions.append(OrderedDict(class_distribution))
 
         # fraction prior counts
         for class_name, dist in class_distribution:
             priors[class_name] += dist
 
-    # posterier counts
+    # transform into posterier probability dictionary
     posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
 
-    #prior_probs = get_priors_probs(priors, training_data)
+    # convert fractional counts to probabilities
+    for instance, dist_dict in zip(training_data, distributions):
+        for class_name, dist in dist_dict.items():
+            for attribute, value in enumerate(instance):
+                posteriers[class_name][attribute][value] += dist / priors[class_name]
 
-    # transform into posterier probabilities
-    update_posteriers(posteriers, priors, distributions, training_data)
+    # convert priors into probabilities
+    priors = {cs: cnt / len(training_data) for cs, cnt in priors.items()}
 
     # return a tuple of all the needed data structures
     return priors, posteriers, distributions, training_data
 
 def iterate_trained_unsupervised(priors, posteriers, distributions, training_data):
+    print(distributions[0])
 
-    print("Iteration 1")
+    # go over each instance and distribution sumultaneously
+    for instance, distribution in zip(training_data, distributions):
 
-    # get prior probabilities
-    # to differentiate between counts
-    prior_probs = get_priors_probs(priors, training_data)
+        # collect new distributions here
+        new_dists = []
 
-    # new distributions go here
-    new_distributions = []
+        # go over each class in distribution
+        for class_name in distribution:
 
-    # go over each instance and and distribion on each row
-    for instance, dist in zip(training_data, distributions):
-
-        # collection the distributions
-        instance_dists = []
-
-        # loop over classes in sorted order
-        for class_name in sorted(dist):
-
-            # calculate new probabilities
+            # calculate new distributions
             product = 1
             for attribute, value in enumerate(instance):
                 product *= posteriers[class_name][attribute][value]
 
-            # add finalised probability
-            instance_dists.append(product * prior_probs[class_name])
+            # multiply by probability
+            product *= priors[class_name]
+            new_dists.append(product)
 
-        # update distribution
-        for class_dist, new_dist in zip(dist, instance_dists):
-            dist[class_dist] = new_dist
+        # normalise distribution into probabilities
+        for class_name, new_dist in zip(distribution, new_dists):
+            distribution[class_name] = new_dist / sum(new_dists)
 
-        for class1 in dist:
-            dist[class1] /= sum(dist.values())
+    print(distributions[0])
 
-
-
-
-
-        new_distributions.append(dist)
-
-    update_posteriers(posteriers, priors, new_distributions, training_data)
-
-    return posteriers
+    return distributions
 
 # This function should predict the class distribution for a set of instances, based on a trained model
 def predict_unsupervised(priors, posteriers, instance):
@@ -247,11 +242,15 @@ def main():
 
     # UNSUPERVISED HERE
     #print(train_unsupervised(data))
-    priors, posteriers, distributions, training_data = train_unsupervised(data)
-
-    print(iterate_trained_supervised(priors, posteriers, distributions, training_data))
+    priors, posteriers, distributions1, training_data = train_unsupervised(data)
 
 
+    #pprint(posteriers)
+
+    distributions2 = iterate_trained_unsupervised(priors, posteriers, distributions1, training_data)
+
+    #pprint(posteriers1['unacc'])
+    #pprint(posteriers2['unacc'])
 
     #instance = ['vhigh','vhigh', '2', '4', 'small', 'med']
     #predict = predict_unsupervised(priors, posteriers, instance)
