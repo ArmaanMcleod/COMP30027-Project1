@@ -4,6 +4,7 @@ from csv import reader
 from pprint import pprint
 from collections import defaultdict
 from collections import OrderedDict
+from collections import Counter
 from itertools import product
 from operator import itemgetter
 
@@ -27,6 +28,8 @@ def preprocess(filename):
 
 # This function should build a supervised NB model
 def train_supervised(training_data):
+    training_data = clean(training_data)
+
     priors = defaultdict(int)
 
     # count prior probabilities
@@ -115,6 +118,7 @@ def evaluate_supervised(priors, posteriers, training_data):
 
     return correct/len(training_data)
 
+# This function creates a postierer count dictionary
 def construct_posteriers(priors, distributions, training_data):
     # new posteriers
     posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
@@ -127,6 +131,28 @@ def construct_posteriers(priors, distributions, training_data):
 
     return posteriers
 
+# This function cleans training data
+def clean(training_data):
+    cleansed_data = []
+
+    # transpose training data for imputation
+    # make columns rows instead for easier access and manipulation
+    for column in zip(*training_data):
+        # count elements in each column
+        # get most column item f
+        counts = Counter(column)
+        counts.pop('?', None)
+        common = counts.most_common(1)[0][0]
+
+        # imputate invalid data with max occuring data in column
+        new_column = [common if val == "?" else val for val in column]
+        cleansed_data.append(new_column)
+
+    # transpose modified data back into rows
+    return list(zip(*cleansed_data))
+
+print(clean([['?', '2'], ['2', '?']]))
+                
 # This function should build an unsupervised NB model
 def train_unsupervised(training_data):
 
@@ -135,6 +161,7 @@ def train_unsupervised(training_data):
     classes = sorted(set(map(itemgetter(-1), training_data)))
 
     # strip classes from training data
+    # also clean training data
     classless_training = [instance[:-1] for instance in training_data]
 
     # random_distributions
@@ -220,6 +247,9 @@ def main():
 
     for file in datasets:
         data = preprocess(file)
+
+        #imputate invalid data
+        data = clean(data)
 
         # SUPERVISED
         priors, posteriers = train_supervised(data)
