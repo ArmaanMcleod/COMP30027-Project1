@@ -4,8 +4,7 @@ import csv
 from pprint import pprint
 from collections import defaultdict
 from random import shuffle
-
-
+import random 
 
 
 
@@ -303,13 +302,40 @@ def get_super_priors(df,classes):
       
    
     return priors
+
+def deterministic_preprocess():
+     df = pd.read_csv(filepath, header = None)
+      
+     clean(df) #impute missing values if they exist
+     df = df.sample(frac=1).reset_index(drop=True) #shuffles the dataframe
+     classes = df[len(df.columns)-1].unique()
+      
+     df = df.iloc[:, :-1]
+    
+    
+  
+     df[len(df.columns)-1] = np.random.choice(classes, df.shape[0])
+     
+    
+   
+   
+     return df, classes
+    
+    
+def deterministic_driver():
+    df, classes = deterministic_preprocess()
+  
+    probs, classes,priors = train_supervised(df)
+    
+    print(evaluate_supervised(df, probs,classes,priors))
+    
     
     
 filepath = "../datasets/hypothyroid-dos.csv"
-non_kfold_driver()
-driver()
+#non_kfold_driver()
+#driver()
 
 print(unsuper_driver())
-
+deterministic_driver()
 
 
