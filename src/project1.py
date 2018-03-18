@@ -3,9 +3,21 @@ import pandas as pd
 import csv
 from pprint import pprint
 from collections import defaultdict
+from random import shuffle
 K  = 2 # k is the number of pieces to divide the data into must be atleast 2
 
 # This function should open a data file in csv, and transform it into a usable format 
+
+
+def unsuper_driver():
+    unsuper_df, classes = unsupervised_preprocess()
+    probList, classes, priors = train_unsupervised(unsuper_df, classes)
+    testdf = pd.read_csv(filepath, header = None)
+   
+    return evaluate_unsupervised(testdf,probList,classes,priors)
+
+
+
 def preprocess():
     
     
@@ -20,6 +32,7 @@ def preprocess():
 
 # This function should build a supervised NB model
 def train_supervised(df):
+    
     #prior probabilties
     highProb = df.groupby(len(df.columns)-1).size().div(len(df))
      
@@ -41,38 +54,45 @@ def train_supervised(df):
         #collects the classes into an list
     classes = df[len(df.columns)-1].unique()
     
-    return probList, classes
+    priors = get_super_priors(df,classes)
+    
+    return probList, classes,priors
 
 # This function should predict the class for a set of instances, based on a trained model 
-def predict_supervised(probList,testrow,classes):
+def predict_supervised(probList,testrow,classes,priors):
     
-    
-    
-  
-    classChance = list() #keep record of all classchanes for this row
+    classChance = [0.0] * len(classes)#keep record of all classchanes for this row
+    classlist = classes.tolist()
     for possibleClass in classes : 
-        prob =1  #begin at 1 
+        
+        prob =1 *priors[classlist.index(possibleClass)]
         for i in range(0,len(testrow)) : #for every element multiply in 
-            
+  
             if (possibleClass,testrow[i]) in probList[i]: 
+               
                 prob = prob * probList[i][(possibleClass,testrow[i])]
             else : 
-                prob=prob * 0.000000000001 #epsilon 
-        classChance.append(prob) #add the item to the list
+               
+                prob = prob * 0.0000001 #epsilon 
+        classChance[classlist.index(possibleClass)]= prob
+        
+        
 
             #here we get the highest probability and match it to the class
     
+
     return classes[classChance.index(max(classChance))]
 
 # This function should evaluate a set of predictions, in a supervised context 
-def evaluate_supervised(testcsv, probs,classes):
+def evaluate_supervised(testcsv, probs,classes,priors):
 
     correct = 0
     total = 0 
     #iterate over each of the rows and pass it to the predict supervised method
     for index, testrow in testcsv.iterrows() :
         
-        if predict_supervised(probs, testrow.tolist(),classes) == testrow[len(testcsv.columns)-1]:
+        
+        if predict_supervised(probs, testrow.tolist(),classes,priors) == testrow[len(testcsv.columns)-1]:
             
             correct +=1
      
@@ -85,26 +105,16 @@ def evaluate_supervised(testcsv, probs,classes):
 def train_unsupervised(df, classes):
    
 
-    classProbs = get_priors(df,classes)
+    priors= get_priors(df,classes)
     
         
 
     probList = make_probability_dictionary(df,classes)
  
-    df = assign_distro(df,classes,probList,classProbs)
+    df = assign_distro(df,classes,probList,priors)
     
-     
 
-           
-
-    probList = make_probability_dictionary(df,classes)
- 
-    df = assign_distro(df,classes,probList,classProbs)
-
- 
- 
-
-    return probList, classes
+    return probList, classes, priors
     
 def make_probability_dictionary(df,classes):
      probList = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda:0.001)))
@@ -136,36 +146,55 @@ def get_priors(df,classes):
     classProbs = []
     for i in classes:   
         classProbs.append(sum(df[i])/len(df))
+    
     return classProbs
-    
-'''  
-    for Poss_Class in range(0,len(classes)):
-        for i in range(0,len(df.columns)-len(classes)):
-       
-           
-           cols =[classes[Poss_Class],i]
-           
-          
-          
-           trained = df.groupby(cols).size().div(len(df)).div(classProbs[Poss_Class])
-           print(trained)
-           probList[i] = trained
-    print(probList)
-    for i in range(0,len(probList)):
-        probList[i] = probList[i].to_dict()
-        #collects the classes into an list
- 
-    
-    return
-'''
+
+
 
 # This function should predict the class distribution for a set of instances, based on a trained model
-def predict_unsupervised():
-    return
+def predict_unsupervised(probList,testrow,classes,priors):
+        
+    shuffle(classes)
+    classChance = [0.0] * len(classes)#keep record of all classchanes for this row
+    classlist = classes.tolist()
+    for possibleClass in classes : 
+        
+        prob =1 *priors[classlist.index(possibleClass)]
+        for i in range(0,len(testrow)) : #for every element multiply in 
+  
+            if (possibleClass,testrow[i]) in probList[i]: 
+               
+                prob = prob * probList[i][(possibleClass,testrow[i])]
+            else : 
+               
+                prob = prob * 0.0000001 #epsilon 
+        classChance[classlist.index(possibleClass)]= prob
+        
+        
+
+    
+    return classes[classChance.index(max(classChance))]
+  
 
 # This function should evaluate a set of predictions, in an unsupervised manner
-def evaluate_unsupervised():
-    return
+def evaluate_unsupervised(testcsv, probs,classes,priors):
+    
+    correct = 0
+    total = 0 
+    #iterate over each of the rows and pass it to the predict supervised method
+    for index, testrow in testcsv.iterrows() :
+        
+            
+        
+        if predict_unsupervised(probs, testrow.tolist(),classes,priors) == testrow[len(testcsv.columns)-1]:
+            
+            correct +=1
+     
+        total +=1
+        
+     
+    return correct/total
+   
 
 def k_fold(fulldf):
     #split array into 10 pieces
@@ -191,10 +220,10 @@ def k_fold(fulldf):
                traindf = pd.concat([traindf,karrays[j]],axis = 0) 
         
         #train the classifer by building the probability dictionary 
-        probs, classes = train_supervised(traindf)
+        probs, classes, priors = train_supervised(traindf)
         #evaluate the classifier 
     
-        sum+= evaluate_supervised(testdf, probs, classes)
+        sum+= evaluate_supervised(testdf, probs, classes,priors)
         
     return sum/K       
                
@@ -214,21 +243,22 @@ def driver():
     fulldf = preprocess()
     
     print(k_fold(fulldf))
+    
     #train the data
     
 def non_kfold_driver():
 
     df = pd.read_csv(filepath, header = None)
   
-    probs, classes = train_supervised(df)
+    probs, classes,priors = train_supervised(df)
     
-    evaluate_supervised(df, probs,classes)
+    print(evaluate_supervised(df, probs,classes,priors))
 
 def unsupervised_preprocess():
       df = pd.read_csv(filepath, header = None)
       
       clean(df) #impute missing values if they exist
-      df = df.sample(frac=1).reset_index(drop=True) #shuffles the dataframe
+    #  df = df.sample(frac=1).reset_index(drop=True) #shuffles the dataframe
       classes = df[len(df.columns)-1].unique()
       
       df = df.iloc[:, :-1]
@@ -237,7 +267,7 @@ def unsupervised_preprocess():
     
       normalise_unsupervised(df,classes)
    
-      return df,classes
+      return df, classes
         
 def normalise_unsupervised(df, classes):
     for index, row in df.iterrows():
@@ -247,16 +277,26 @@ def normalise_unsupervised(df, classes):
       
    
     return
-filepath = "../datasets/car-dos.csv"
+
+def get_super_priors(df,classes):
+    priors = [0.0] * len(classes)
+    total = 0
+    classes = classes.tolist()
+    for index, row in df.iterrows():
+        priors[classes.index(row[len(row)-1])] += 1 
+        total += 1
+    for i in range(len(priors)):
+        priors[i] = priors[i]/total
+
+           
+      
+   
+    return priors
+    
+    
+filepath = "../datasets/mushroom-dos.csv"
 non_kfold_driver()
 driver()
 
-def unsuper_driver():
-    unsuper_df, classes = unsupervised_preprocess()
-    probList, classes = train_unsupervised(unsuper_df, classes)
-    testdf = pd.read_csv(filepath, header = None)
-   
-    return evaluate_supervised(testdf,probList,classes)
-
-
 print(unsuper_driver())
+
