@@ -115,22 +115,6 @@ def evaluate_supervised(priors, posteriers, data):
 
     return correct/len(data)
 
-# this function should get the prior probabilities
-# the counts will be passed around instead
-def get_priors_probs(priors, training_data):
-    return {cs: cnt / len(training_data) for cs, cnt in priors.items()}
-
-# update posteriers by dividing through the class counts
-def update_posteriers(priors, distribution, training_data):
-    posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
-
-    for instance, dist_dict in zip(training_data, distribution):
-        for class_name, dist in dist_dict.items():
-            for attribute, value in enumerate(instance):
-                posteriers[class_name][attribute][value] += dist / priors[class_name]
-
-    return posteriers
-
 # This function should build an unsupervised NB model
 def train_unsupervised(training_data):
     # get sorted list of classes in data set
