@@ -115,11 +115,26 @@ def evaluate_supervised(priors, posteriers, data):
 
     return correct/len(data)
 
+def construct_posteriers(priors, distributions, training_data):
+    # new posteriers
+    posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
+
+    # convert fractional counts to probabilities
+    for instance, dist_dict in zip(training_data, distributions):
+        for class_name, dist in dist_dict.items():
+            for attribute, value in enumerate(instance):
+                posteriers[class_name][attribute][value] += dist / priors[class_name]
+
+    return posteriers
+
 # This function should build an unsupervised NB model
 def train_unsupervised(training_data):
+
     # get sorted list of classes in data set
+    # allowed columns of classes to always be same order
     classes = sorted(set(map(itemgetter(-1), training_data)))
 
+    # strip classes from training data
     training_data = [instance[:-1] for instance in training_data]
 
     # random_distributions
@@ -131,8 +146,6 @@ def train_unsupervised(training_data):
     # calculate priors of random distribtions
     # and transform training data into randomized labelled data
     for instance in training_data:
-
-        # get random distribution of classes
         rand_distribution = np.random.dirichlet(np.ones(len(classes)), size=1)
         
         # add and create tupled pairs of (class, distribution)
@@ -145,59 +158,50 @@ def train_unsupervised(training_data):
             priors[class_name] += dist
 
     # transform into posterier probability dictionary
-    posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
-
-    # convert fractional counts to probabilities
-    for instance, dist_dict in zip(training_data, distributions):
-        for class_name, dist in dist_dict.items():
-            for attribute, value in enumerate(instance):
-                posteriers[class_name][attribute][value] += dist / priors[class_name]
-
-    # convert priors into probabilities
-    priors = {cs: cnt / len(training_data) for cs, cnt in priors.items()}
+    posteriers = construct_posteriers(priors, distributions, training_data)
 
     # return a tuple of all the needed data structures
     return priors, posteriers, distributions, training_data
 
+# This function iterates over training data and gives back a new distribution
 def iterate_trained_unsupervised(priors, posteriers, distributions, training_data):
-    print(distributions[0])
+
+    # convert fractions to probabilities
+    probs = {cs: cnt / len(training_data) for cs, cnt in priors.items()}
 
     # go over each instance and distribution sumultaneously
+    # collect new distributions
     for instance, distribution in zip(training_data, distributions):
-
-        # collect new distributions here
         new_dists = []
 
         # go over each class in distribution
         for class_name in distribution:
+            product = 1
 
             # calculate new distributions
-            product = 1
             for attribute, value in enumerate(instance):
                 product *= posteriers[class_name][attribute][value]
 
-            # multiply by probability
-            product *= priors[class_name]
+            # multiply by probability and add it
+            product *= probs[class_name]
             new_dists.append(product)
 
         # normalise distribution into probabilities
         for class_name, new_dist in zip(distribution, new_dists):
             distribution[class_name] = new_dist / sum(new_dists)
 
-    print(distributions[0])
+    # recreate posteriers with new distributions
+    new_posteriers = construct_posteriers(priors, distributions, training_data)
 
-    return distributions
+    return new_posteriers, distributions
 
 # This function should predict the class distribution for a set of instances, based on a trained model
 def predict_unsupervised(priors, posteriers, instance):
     return
-
-
+    
 # This function should evaluate a set of predictions, in an unsupervised manner
 def evaluate_unsupervised():
     return
-
-
 
 def main():
     datasets = ['breast-cancer.csv',
@@ -205,18 +209,13 @@ def main():
                 'hypothyroid.csv',
                 'mushroom.csv']
 
-    #for file in datasets:
-        #data = preprocess(file)
-        #trained_data = train_supervised(data)
-        #print(trained_data)
-
     # testing on just one dataset
     data = preprocess(datasets[1])
 
     # SUPERVISED HERE
     priors, posteriers = train_supervised(data)
 
-    # test row here
+    # test rows here
     instance = ['vhigh','vhigh', '2', '4', 'small', 'med', 'unnac']
     predict = predict_supervised(priors, posteriers, instance[:-1])
 
@@ -225,26 +224,14 @@ def main():
     #print(evaluate)
 
     # UNSUPERVISED HERE
-    #print(train_unsupervised(data))
-    priors, posteriers, distributions1, training_data = train_unsupervised(data)
+    priors, posteriers1, distributions1, training_data = train_unsupervised(data)
+    print(distributions1[0])
 
+    posteriers2, distributions2 = iterate_trained_unsupervised(priors, posteriers1, distributions1, training_data)
+    print(distributions2[0])
 
-    #pprint(posteriers)
-
-    distributions2 = iterate_trained_unsupervised(priors, posteriers, distributions1, training_data)
-
-    #pprint(posteriers1['unacc'])
-    #pprint(posteriers2['unacc'])
-
-    #instance = ['vhigh','vhigh', '2', '4', 'small', 'med']
-    #predict = predict_unsupervised(priors, posteriers, instance)
-
-
-
-
-
-    #print(trained_data)
-
+    posteriers3, distributions3 = iterate_trained_unsupervised(priors, posteriers2, distributions2, training_data)
+    print(distributions3[0])
 
 if __name__ == '__main__':
     main()
