@@ -66,7 +66,7 @@ def predict_supervised(probList,testrow,classes,priors):
     for possibleClass in classes : 
         
         prob =1 *priors[classlist.index(possibleClass)]
-        for i in range(0,len(testrow)) : #for every element multiply in 
+        for i in range(0,len(testrow)-1) : #for every element multiply in 
   
             if (possibleClass,testrow[i]) in probList[i]: 
                
@@ -160,14 +160,14 @@ def predict_unsupervised(probList,testrow,classes,priors):
     for possibleClass in classes : 
         
         prob =1 *priors[classlist.index(possibleClass)]
-        for i in range(0,len(testrow)) : #for every element multiply in 
+        for i in range(0,len(testrow)-len(classes)) : #for every element multiply in 
   
-            if (possibleClass,testrow[i]) in probList[i]: 
+            if testrow[i] in probList[i][possibleClass]: 
+              
+                prob = prob * probList[i][possibleClass][testrow[i]]
+            else: 
                
-                prob = prob * probList[i][(possibleClass,testrow[i])]
-            else : 
-               
-                prob = prob * 0.0000001 #epsilon 
+               prob = prob * 0.0000001 #epsilon 
         classChance[classlist.index(possibleClass)]= prob
         
         
@@ -258,7 +258,7 @@ def unsupervised_preprocess():
       df = pd.read_csv(filepath, header = None)
       
       clean(df) #impute missing values if they exist
-    #  df = df.sample(frac=1).reset_index(drop=True) #shuffles the dataframe
+      df = df.sample(frac=1).reset_index(drop=True) #shuffles the dataframe
       classes = df[len(df.columns)-1].unique()
       
       df = df.iloc[:, :-1]
