@@ -1,12 +1,12 @@
+import os
 import numpy as np
 
 from csv import reader
 from pprint import pprint
+from operator import itemgetter
+from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
-from collections import Counter
-from itertools import product
-from operator import itemgetter
 
 # This function should open a data file in csv, and transform it into a usable format
 def preprocess(filename):
@@ -138,21 +138,21 @@ def clean(training_data):
     # transpose training data for imputation
     # make columns rows instead for easier access and manipulation
     for column in zip(*training_data):
+
         # count elements in each column
-        # get most column item f
+        # remove '?' character from counts
+        # get most common item in column
         counts = Counter(column)
         counts.pop('?', None)
         common = counts.most_common(1)[0][0]
 
         # imputate invalid data with max occuring data in column
-        new_column = [common if val == "?" else val for val in column]
+        new_column = [common if val == '?' else val for val in column]
         cleansed_data.append(new_column)
 
     # transpose modified data back into rows
-    return list(zip(*cleansed_data))
+    return list(map(list, zip(*cleansed_data)))
 
-print(clean([['?', '2'], ['2', '?']]))
-                
 # This function should build an unsupervised NB model
 def train_unsupervised(training_data):
 
@@ -239,11 +239,23 @@ def evaluate_unsupervised(distributions, training_data):
 
     return correct/len(training_data)
 
+# This function gets all the csv files in the current directory
+def get_datasets(extension='.csv'):
+    files = []
+
+    # go through all items in current directorys
+    for file in os.listdir('.'):
+
+        # add if item is a file and ends with extension
+        if os.path.isfile(file) and file.endswith(extension):
+            files.append(file)
+
+    # return items in sorted order
+    return sorted(files)
+
+# This function is the main driver of program
 def main():
-    datasets = ['breast-cancer.csv',
-                'car.csv',
-                'hypothyroid.csv',
-                'mushroom.csv']
+    datasets = get_datasets()
 
     for file in datasets:
         data = preprocess(file)
@@ -257,7 +269,7 @@ def main():
         evaluate = evaluate_supervised(priors, posteriers, data)
 
         print(file)
-        print("supervised: %s" %(str(evaluate)))
+        print("supervised: %s" % (str(evaluate)))
 
         # UNSUPERVISED
         priors, posteriers, distributions, training_data = train_unsupervised(data)
