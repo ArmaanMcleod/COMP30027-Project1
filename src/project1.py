@@ -4,7 +4,13 @@ import csv
 from pprint import pprint
 from collections import defaultdict
 from random import shuffle
-K  = 2 # k is the number of pieces to divide the data into must be atleast 2
+
+
+
+
+
+
+K  = 10 # k is the number of pieces to divide the data into must be atleast 2
 
 # This function should open a data file in csv, and transform it into a usable format 
 
@@ -73,7 +79,7 @@ def predict_supervised(probList,testrow,classes,priors):
                 prob = prob * probList[i][(possibleClass,testrow[i])]
             else : 
                
-                prob = prob * 0.0000001 #epsilon 
+                prob = prob * 0.00000000000001 #epsilon 
         classChance[classlist.index(possibleClass)]= prob
         
         
@@ -112,7 +118,12 @@ def train_unsupervised(df, classes):
     probList = make_probability_dictionary(df,classes)
  
     df = assign_distro(df,classes,probList,priors)
-    
+   
+    probList = make_probability_dictionary(df,classes)
+ 
+    df = assign_distro(df,classes,probList,priors)
+   
+   
 
     return probList, classes, priors
     
@@ -167,7 +178,7 @@ def predict_unsupervised(probList,testrow,classes,priors):
                 prob = prob * probList[i][possibleClass][testrow[i]]
             else: 
                
-               prob = prob * 0.0000001 #epsilon 
+               prob = prob * 0.0000000001 #epsilon 
         classChance[classlist.index(possibleClass)]= prob
         
         
@@ -294,9 +305,11 @@ def get_super_priors(df,classes):
     return priors
     
     
-filepath = "../datasets/mushroom-dos.csv"
+filepath = "../datasets/hypothyroid-dos.csv"
 non_kfold_driver()
 driver()
 
 print(unsuper_driver())
+
+
 
