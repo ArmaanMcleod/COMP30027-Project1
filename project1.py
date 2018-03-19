@@ -8,7 +8,8 @@ from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
 
-# This function should open a data file in csv, and transform it into a usable format
+# This function should open a data file in csv
+# transform it into a usable format
 def preprocess(filename):
 
     # all lines in file go here
@@ -28,14 +29,14 @@ def preprocess(filename):
 
 # This function should build a supervised NB model
 def train_supervised(training_data):
-    training_data = clean(training_data)
 
+    # priors count dictionary
     priors = defaultdict(int)
 
     # count prior probabilities
     for line in training_data:
         col = line[-1]
-        priors[col] += 1 / len(training_data)
+        priors[col] += 1/len(training_data)
 
     # create posteriers data structure with triple nested defaultdicts
     # perhaps a more simplified data structure could be used here
@@ -47,8 +48,7 @@ def train_supervised(training_data):
     for line in training_data:
 
         # obtain class and attributes
-        attributes = line[:-1]
-        class_name = line[-1]
+        attributes, class_name = line[:-1], line[-1]
 
         # count each item
         # using indices as attribute headers since not given in dataset
@@ -72,7 +72,8 @@ def train_supervised(training_data):
     # return a tuple of the two above data structures
     return priors, posteriers
 
-# This function should predict the class for a set of instances, based on a trained model
+# This function should predict the class for a set of instances
+# based on a trained model
 def predict_supervised(priors, posteriers, instance):
 
     # epsilon value for smoothing
@@ -119,7 +120,7 @@ def evaluate_supervised(priors, posteriers, training_data):
     return correct/len(training_data)
 
 # This function creates a postierer count dictionary
-def construct_posteriers(priors, distributions, training_data):
+def construct_posteriers_unsupervised(priors, distributions, training_data):
     # new posteriers
     posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
 
@@ -127,7 +128,8 @@ def construct_posteriers(priors, distributions, training_data):
     for instance, dist_dict in zip(training_data, distributions):
         for class_name, dist in dist_dict.items():
             for attribute, value in enumerate(instance):
-                posteriers[class_name][attribute][value] += dist / priors[class_name]
+                posteriers[class_name][attribute][value] += (dist / 
+                                                            priors[class_name])
 
     return posteriers
 
@@ -185,7 +187,9 @@ def train_unsupervised(training_data):
             priors[class_name] += dist
 
     # transform into posterier probability dictionary
-    posteriers = construct_posteriers(priors, distributions, classless_training)
+    posteriers = construct_posteriers_unsupervised(priors, 
+                                                   distributions, 
+                                                   classless_training)
 
     # return a tuple of all the needed data structures
     return priors, posteriers, distributions, classless_training
@@ -218,12 +222,15 @@ def predict_unsupervised(priors, posteriers, distributions, training_data):
             distribution[class_name] = new_dist / sum(new_dists)
 
     # recreate posteriers with new distributions
-    new_posteriers = construct_posteriers(priors, distributions, training_data)
+    new_posteriers = construct_posteriers_unsupervised(priors, 
+                                                       distributions, 
+                                                       training_data)
 
     return new_posteriers, distributions
     
 # This function should evaluate a set of predictions, in an unsupervised manner
 def evaluate_unsupervised(distributions, training_data):
+
     # keep a counter of correct instances found
     correct = 0
 
@@ -241,6 +248,7 @@ def evaluate_unsupervised(distributions, training_data):
 
 # This function gets all the csv files in the current directory
 def get_datasets(extension='.csv'):
+
     files = []
 
     # go through all items in current directorys
@@ -269,7 +277,7 @@ def main():
         evaluate = evaluate_supervised(priors, posteriers, data)
 
         print(file)
-        print("supervised: %s" % (str(evaluate)))
+        print('supervised: %s' % (str(evaluate)))
 
         # UNSUPERVISED
         priors, posteriers, distributions, training_data = train_unsupervised(data)
@@ -277,14 +285,18 @@ def main():
         ITERATIONS = 2
         count = 0
         while count < ITERATIONS:
-            posterier_temp, distribution_temp = predict_unsupervised(priors, posteriers, distributions, training_data)
+            posterier_temp, distribution_temp = predict_unsupervised(priors,
+                                                                     posteriers, 
+                                                                     distributions, 
+                                                                     training_data)
+
             posteriers, distributions = posterier_temp, distribution_temp
 
             count += 1
 
         evaluate = evaluate_unsupervised(distributions, data)
 
-        print("unsupervised: %s\n" % (str(evaluate)))
+        print('unsupervised: %s\n' % (str(evaluate)))
 
 
 if __name__ == '__main__':
