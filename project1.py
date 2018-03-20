@@ -306,7 +306,7 @@ def main():
 
         print(file)
         print('supervised: %f' % (evaluate))
-        print('cross_validation: %f' % (cross_validation(data, 10)))
+        print('cross validation: %f' % (cross_validation(data, 10)))
 
         # UNSUPERVISED
         priors, posteriers, distributions, training_data = train_unsupervised(data)
