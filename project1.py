@@ -3,6 +3,7 @@ import numpy as np
 
 from csv import reader
 from pprint import pprint
+from itertools import chain
 from operator import itemgetter
 from collections import Counter
 from collections import defaultdict
@@ -104,6 +105,7 @@ def predict_supervised(priors, posteriers, instance):
 
 # This function should evaluate a set of predictions, in a supervised context
 def evaluate_supervised(priors, posteriers, training_data):
+
     # keep a counter of correct instances found
     correct = 0
 
@@ -118,6 +120,32 @@ def evaluate_supervised(priors, posteriers, training_data):
             correct += 1
 
     return correct/len(training_data)
+
+# This function uses the cross validation strategy
+# Which runs on a supervised NB model
+def cross_validation(dataset, k):
+
+    # divide dataset into k length partitions
+    partitions = [part.tolist() for part in np.array_split(dataset, k)]
+
+    # helper function for flattening a list
+    flatten = lambda lst : list(chain.from_iterable(lst))
+
+    # accuracy counter
+    sums = 0
+
+    for i, test_data in enumerate(partitions):
+
+        # get every other partition except current test data
+        training_data = flatten(partitions[:i]) + flatten(partitions[i+1:])
+
+        # get the trained supervised model
+        priors, posteriers = train_supervised(training_data)
+
+        # accumulate accuracy of test data
+        sums += evaluate_supervised(priors, posteriers, test_data)
+s
+    return sums/k
 
 # This function creates a postierer count dictionary
 def construct_posteriers_unsupervised(priors, distributions, training_data):
@@ -277,7 +305,8 @@ def main():
         evaluate = evaluate_supervised(priors, posteriers, data)
 
         print(file)
-        print('supervised: %s' % (str(evaluate)))
+        print('supervised: %f' % (evaluate))
+        print('cross_validation: %f' % (cross_validation(data, 10)))
 
         # UNSUPERVISED
         priors, posteriers, distributions, training_data = train_unsupervised(data)
@@ -296,7 +325,7 @@ def main():
 
         evaluate = evaluate_unsupervised(distributions, data)
 
-        print('unsupervised: %s\n' % (str(evaluate)))
+        print('unsupervised: %f\n' % (evaluate))
 
 
 if __name__ == '__main__':
