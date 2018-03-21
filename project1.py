@@ -135,7 +135,7 @@ def cross_validation(dataset, k):
     sums = 0
 
     for i, test_data in enumerate(partitions):
-
+1
         # get every other partition except current test data
         training_data = flatten(partitions[:i]) + flatten(partitions[i+1:])
 
