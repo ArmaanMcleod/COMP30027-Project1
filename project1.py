@@ -144,7 +144,7 @@ def cross_validation(dataset, k):
 
         # accumulate accuracy of test data
         sums += evaluate_supervised(priors, posteriers, test_data)
-s
+
     return sums/k
 
 # This function creates a postierer count dictionary
@@ -306,7 +306,10 @@ def main():
 
         print(file)
         print('supervised: %f' % (evaluate))
-        print('cross validation: %f' % (cross_validation(data, 10)))
+
+        # cross validation for supervised NB
+        K = 10
+        print('cross validation: %f' % (cross_validation(data, K)))
 
         # UNSUPERVISED
         priors, posteriers, distributions, training_data = train_unsupervised(data)
