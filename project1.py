@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 from csv import reader
 from pprint import pprint
@@ -8,6 +9,7 @@ from operator import itemgetter
 from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
+from sklearn.metrics import confusion_matrix
 
 # This function should open a data file in csv
 # transform it into a usable format
@@ -135,7 +137,7 @@ def cross_validation(dataset, k):
     sums = 0
 
     for i, test_data in enumerate(partitions):
-1
+
         # get every other partition except current test data
         training_data = flatten(partitions[:i]) + flatten(partitions[i+1:])
 
@@ -262,6 +264,9 @@ def evaluate_unsupervised(distributions, training_data):
     # keep a counter of correct instances found
     correct = 0
 
+    guesses = []
+    trues = []
+
     # go over each instance ad parallel distribution in training data
     # get predicted class for each instance
     for instance, distribution in zip(training_data, distributions):
@@ -271,6 +276,31 @@ def evaluate_unsupervised(distributions, training_data):
         # increment the count
         if predict_class == instance[-1]:
             correct += 1
+
+        guesses.append(predict_class)
+        trues.append(instance[-1])
+
+    classes = list(distributions[0].keys())
+
+    cm = confusion_matrix(trues, guesses, labels=classes)
+    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    plt.imshow(cm,cmap= plt.cm.Greens)
+  
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks,classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    width, height = cm.shape
+
+    for x in range(width):
+        for y in range(height):
+            plt.annotate('%.4f' % cm[x][y], xy=(y, x), 
+                        horizontalalignment='center',
+                        verticalalignment='center')
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.show()
 
     return correct/len(training_data)
 
@@ -333,3 +363,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
