@@ -222,7 +222,7 @@ def train_unsupervised(training_data):
                                                    classless_training)
 
     # return a tuple of all the needed data structures
-    return priors, posteriers, distributions, classless_training
+    return priors, posteriers, distributions, classless_training, classes
 
 # This function builds new predictions from an NB unsupervised model
 def predict_unsupervised(priors, posteriers, distributions, training_data):
@@ -257,32 +257,10 @@ def predict_unsupervised(priors, posteriers, distributions, training_data):
                                                        training_data)
 
     return new_posteriers, distributions
-    
-# This function should evaluate a set of predictions, in an unsupervised manner
-def evaluate_unsupervised(distributions, training_data):
 
-    # keep a counter of correct instances found
-    correct = 0
+def output_confusion_matrix(matches, guesses, classes):
 
-    guesses = []
-    trues = []
-
-    # go over each instance ad parallel distribution in training data
-    # get predicted class for each instance
-    for instance, distribution in zip(training_data, distributions):
-        predict_class, _ = max(distribution.items(), key=itemgetter(1))
-
-        # if class is identical to the instances last column
-        # increment the count
-        if predict_class == instance[-1]:
-            correct += 1
-
-        guesses.append(predict_class)
-        trues.append(instance[-1])
-
-    classes = list(distributions[0].keys())
-
-    cm = confusion_matrix(trues, guesses, labels=classes)
+    cm = confusion_matrix(matches, guesses, labels=classes)
     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     plt.imshow(cm,cmap= plt.cm.Greens)
   
@@ -298,9 +276,35 @@ def evaluate_unsupervised(distributions, training_data):
             plt.annotate('%.4f' % cm[x][y], xy=(y, x), 
                         horizontalalignment='center',
                         verticalalignment='center')
+            
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.show()
+    
+# This function should evaluate a set of predictions, in an unsupervised manner
+def evaluate_unsupervised(distributions, training_data, classes):
+
+    # keep a counter of correct instances found
+    correct = 0
+
+    guesses = []
+    matches = []
+
+    # go over each instance ad parallel distribution in training data
+    # get predicted class for each instance
+    for instance, distribution in zip(training_data, distributions):
+        predict_class, _ = max(distribution.items(), key=itemgetter(1))
+        class_col = instance[-1]
+
+        # if class is identical to the instances last column
+        # increment the count
+        if predict_class == class_col:
+            correct += 1
+
+        guesses.append(predict_class)
+        matches.append(class_col)
+
+    output_confusion_matrix(matches, guesses, classes)
 
     return correct/len(training_data)
 
@@ -342,7 +346,7 @@ def main():
         print('cross validation: %f' % (cross_validation(data, K)))
 
         # UNSUPERVISED
-        priors, posteriers, distributions, training_data = train_unsupervised(data)
+        priors, posteriers, distributions, training_data, classes = train_unsupervised(data)
 
         ITERATIONS = 2
         count = 0
@@ -356,7 +360,7 @@ def main():
 
             count += 1
 
-        evaluate = evaluate_unsupervised(distributions, data)
+        evaluate = evaluate_unsupervised(distributions, data, classes)
 
         print('unsupervised: %f\n' % (evaluate))
 
