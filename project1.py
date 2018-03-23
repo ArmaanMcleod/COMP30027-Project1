@@ -258,25 +258,31 @@ def predict_unsupervised(priors, posteriers, distributions, training_data):
 
     return new_posteriers, distributions
 
+# This function should create a confusion matrix
 def output_confusion_matrix(matches, guesses, classes):
 
+    # create confusion matrix
     cm = confusion_matrix(matches, guesses, labels=classes)
     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     plt.imshow(cm,cmap= plt.cm.Greens)
   
+    # set axis
     plt.colorbar()
     tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks,classes, rotation=45)
     plt.yticks(tick_marks, classes)
 
+    # get dimensions of matrix
     width, height = cm.shape
 
+    # annotate matrix
     for x in range(width):
         for y in range(height):
             plt.annotate('%.4f' % cm[x][y], xy=(y, x), 
                         horizontalalignment='center',
                         verticalalignment='center')
-            
+
+    # create labels and show matrix
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.show()
@@ -287,6 +293,7 @@ def evaluate_unsupervised(distributions, training_data, classes):
     # keep a counter of correct instances found
     correct = 0
 
+    # collect guesses and matched classes here
     guesses = []
     matches = []
 
@@ -301,9 +308,12 @@ def evaluate_unsupervised(distributions, training_data, classes):
         if predict_class == class_col:
             correct += 1
 
+        # add predicted class and actual classes
+        # used for confusion matrix
         guesses.append(predict_class)
         matches.append(class_col)
 
+    # output a confusion matrix
     output_confusion_matrix(matches, guesses, classes)
 
     return correct/len(training_data)
