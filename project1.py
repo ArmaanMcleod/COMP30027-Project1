@@ -1,4 +1,5 @@
 import os
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -184,6 +185,12 @@ def clean(training_data):
 
     # transpose modified data back into rows
     return list(map(list, zip(*cleansed_data)))
+
+# This function deterministically assigns classes for the supervised NB model
+def deterministic_supervised(training_data, classes):
+
+    # return random classes to each instance
+    return [inst[:-1] + [random.choice(classes)] for inst in training_data]
 
 # This function should build an unsupervised NB model
 def train_unsupervised(training_data):
@@ -372,8 +379,13 @@ def main():
 
         evaluate = evaluate_unsupervised(distributions, data, classes)
 
-        print('unsupervised: %f\n' % (evaluate))
+        print('unsupervised: %f' % (evaluate))
 
+        # UNSUPERVISED deterministic
+        data = deterministic_supervised(data, classes)
+        priors, posteriers = train_supervised(data)
+        evaluate = evaluate_supervised(priors, posteriers, data)
+        print('deterministic supervised: %f\n' % (evaluate))
 
 if __name__ == '__main__':
     main()
