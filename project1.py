@@ -1,9 +1,14 @@
+# Project 1: Supervised and unsupervised Naive Bayes classifiers
+# Subject: COMP30027 Machine Learning, 2018 Semester 1
+# Authors: Bilal Sheheta and Armaan Dhaliwal-McLeod
+
+# all script imports below
 import os
-import random
 import numpy as np
 import matplotlib.pyplot as plt
 
 from csv import reader
+from random import choice
 from pprint import pprint
 from itertools import chain
 from operator import itemgetter
@@ -12,9 +17,17 @@ from collections import defaultdict
 from collections import OrderedDict
 from sklearn.metrics import confusion_matrix
 
-# This function should open a data file in csv
-# transform it into a usable format
 def preprocess(filename):
+    """Opens dataset and transforms it into a usable format. The format given
+    back is 2D list of strings, where each list is a row in the file. When
+    this 2D is created. Returns this data in a cleaned format. 
+    
+    Args:
+        filename (str): dataset
+    
+    Returns:
+        list: 2D list of strings
+    """
 
     # all lines in file go here
     lines = []
@@ -25,15 +38,25 @@ def preprocess(filename):
         # convert to reader object
         csv_reader = reader(infile)
 
-        # loop over each line and add it to resultOnant list
+        # loop over each line and add it to resultant list
         for line in csv_reader:
             lines.append(line)
 
     # return cleaned csv data
     return clean(lines)
 
-# This function cleans training data
 def clean(training_data):
+    """Cleans training data by replacing '?' attributes with most common item
+    in column. It first transposes the data, imputes the missing data, then
+    re-transposes it into its original structure. Returns this new structure. 
+    
+    Args:
+        training_data (list): training data contained in 2D list of strings 
+    
+    Returns:
+        list: 2D list of strings
+    """
+
     cleansed_data = []
 
     # transpose training data for imputation
@@ -54,9 +77,17 @@ def clean(training_data):
     # transpose modified data back into rows
     return list(map(list, zip(*cleansed_data)))
 
-# This function should build a supervised NB model
 def train_supervised(training_data):
-
+    """Trains a supervised NB model. Counts and probabilites are calculated
+    from the training data and used to build this model. Returns dictionaries 
+    containing the prior and posterier counts.
+    
+    Args:
+        training_data (list): training data contained in 2D list of strings 
+    
+    Returns:
+        (collections.defaultdict, collections.defaultdict): 
+    """
     # priors count dictionary
     priors = defaultdict(int)
 
@@ -99,10 +130,20 @@ def train_supervised(training_data):
     # return a tuple of the two above data structures
     return priors, posteriers
 
-# This function should predict the class for a set of instances
-# based on a trained model
 def predict_supervised(priors, posteriers, instance):
-
+    """Predicts instances of NB supervised model by predicting an instence from
+    the training data. Uses the priors and posteriers from the trained model,
+    and needs an instance to predict. returns predicted class of specified
+    instance.
+    
+    Args:
+        priors (collections.defaultdict): priors count dictionary
+        posteriers (collections.defaultdict): posteriers count dictionary
+        instance (list): instance row to predict
+    
+    Returns:
+        str: Predicted class
+    """
     # epsilon value for smoothing
     EPSILON = 0.000000000001
 
@@ -129,8 +170,19 @@ def predict_supervised(priors, posteriers, instance):
     # return a tuple of the class and maximal probability
     return max(class_max.items(), key=itemgetter(1))
 
-# This function should evaluate a set of predictions, in a supervised context
 def evaluate_supervised(priors, posteriers, training_data):
+    """Evaluate trained supervised NB model, where each instance is compared 
+    with its corresponding predicted class. Returns number of correct 
+    predictions divided by number of instances in training data.
+    
+    Args:
+        priors (collections.defaultdict): priors count dictionary
+        posteriers (collections.defaultdict): posteriers count dictionary
+        training_data (list): training data contained in 2D list of strings 
+    
+    Returns:
+        float: evaluation metric
+    """
 
     # keep a counter of correct instances found
     correct = 0
@@ -147,12 +199,20 @@ def evaluate_supervised(priors, posteriers, training_data):
 
     return correct/len(training_data)
 
-# This function uses the cross validation strategy
-# Which runs on a supervised NB model
-def cross_validation(dataset, k):
-
+def cross_validation(data, k):
+    """Performs cross validation on a dataset. splits dataset into k partitions,
+    then chooses one section to be the training data, and the rest as the test
+    data. This is performed k times. Returns new accuracy. 
+    
+    Args:
+        data (list): data contained in 2D list of strings 
+        k (int): Number of partitions for data to be splitted into
+    
+    Returns:
+        float: sum of evaluations for each test data divided by k
+    """
     # divide dataset into k length partitions
-    partitions = [part.tolist() for part in np.array_split(dataset, k)]
+    partitions = [part.tolist() for part in np.array_split(data, k)]
 
     # helper function for flattening a list
     flatten = lambda lst : list(chain.from_iterable(lst))
@@ -163,6 +223,7 @@ def cross_validation(dataset, k):
     for i, test_data in enumerate(partitions):
 
         # get every other partition except current test data
+        # flattens each section to concatenate lists nicely
         training_data = flatten(partitions[:i]) + flatten(partitions[i+1:])
 
         # get the trained supervised model
@@ -173,8 +234,19 @@ def cross_validation(dataset, k):
 
     return sums/k
 
-# This function creates a postierer count dictionary
 def construct_posteriers_unsupervised(priors, distributions, training_data):
+    """Constructs a new posterier dictionary for a unsupervised model. This is
+    is geared for updating the posterier dictionary after each iteration with
+    new probabilities. Returns fresh dictionary with new probabilities. 
+    
+    Args:
+        priors (collections.defaultdict): priors count dictionary
+        distributions (list): list of dictionary for class distributions
+        training_data (TYPE): 2D list containing instances from training data
+    
+    Returns:
+        collections.defaultdict: New posterier dictionary
+    """
     # new posteriers
     posteriers = defaultdict(lambda : defaultdict(lambda : defaultdict(float)))
 
@@ -187,15 +259,31 @@ def construct_posteriers_unsupervised(priors, distributions, training_data):
 
     return posteriers
 
-# This function deterministically assigns classes for the supervised NB model
 def deterministic_unsupervised(training_data, classes):
+    """Deterministically assigns classes to each instance in a supervised NB
+    model. Simply removes the last column containing the class, and replaces it
+    with a random class. Returns new training data. 
+    
+    Args:
+        training_data (list): 2D list of lists containing training data
+        classes (list): list containing names of classes
+    
+    Returns:
+        list: 2D list of lists containing new data
+    """
 
-    # return random classes to each instance
-    return [inst[:-1] + [random.choice(classes)] for inst in training_data]
+    return [instance[:-1] + [choice(classes)] for instance in training_data]
 
-# This function should build an unsupervised NB model
 def train_unsupervised(training_data):
-
+    """Trains a unsupervised NB model. Very similar to supervised NB, except
+    random distributions for each class are generated. 
+    
+    Args:
+        training_data (list): 2D list of lists containing training data
+    
+    Returns:
+        (collections.defaultdict, collections.defaultdict, list, list, list)
+    """
     # get sorted list of classes in data set
     # allowed columns of classes to always be same order
     classes = sorted(set(map(itemgetter(-1), training_data)))
@@ -232,8 +320,21 @@ def train_unsupervised(training_data):
     # return a tuple of all the needed data structures
     return priors, posteriers, distributions, classless_training, classes
 
-# This function builds new predictions from an NB unsupervised model
 def predict_unsupervised(priors, posteriers, distributions, training_data):
+    """Predicts unsupervised NB nodel. Each time called, new postieriers and
+    distributions are created in order to generate new predictions each
+    iteration. 
+    
+    Args:
+        priors (collections.defaultdict): priors counting dictionary
+        posteriers (collections.defaultdict): posteriers counting dictionary
+        distributions (list): list containing class distributions
+        training_data (list): 2D list of lists containing training data
+    
+    Returns:
+        (collections.defaultdict, list): tuple containing new posteriers and
+        distributions.
+    """
 
     # convert fractions to probabilities
     probs = {cs: cnt / len(training_data) for cs, cnt in priors.items()}
@@ -266,8 +367,18 @@ def predict_unsupervised(priors, posteriers, distributions, training_data):
 
     return new_posteriers, distributions
 
-# This function should create a confusion matrix
 def output_confusion_matrix(matches, guesses, classes):
+    """Returns a confusion matrix based on the actual classes vs the predicted
+    classes.
+    
+    Args:
+        matches (list): actual classes
+        guesses (list): predictions
+        classes (list): All possible classes
+    
+    Returns:
+        sklearn.metrics.confusion_matrix: Confusion matrix
+    """
 
     # create confusion matrix
     cm = confusion_matrix(matches, guesses, labels=classes)
@@ -283,7 +394,7 @@ def output_confusion_matrix(matches, guesses, classes):
     # get dimensions of matrix
     width, height = cm.shape
 
-    # annotate matrix
+    # annotate matrix with correct decimal places
     for x in range(width):
         for y in range(height):
             plt.annotate('%.4f' % cm[x][y], xy=(y, x), 
@@ -295,10 +406,23 @@ def output_confusion_matrix(matches, guesses, classes):
     plt.xlabel('Predicted label')
     plt.show()
 
+    # return actual matrix
     return cm
     
-# This function should evaluate a set of predictions, in an unsupervised manner
 def evaluate_unsupervised(distributions, training_data, classes):
+    """Evaluate trained unsupervised model, where each instance is compared with 
+    its corresponding predicted class. Returns number of correct predictions
+    divided by number of instances in training data. Also outputs a confusion
+    matrix, along with its evauluated accuracy.
+    
+    Args:
+        distributions (list): list of class distributions for each instance
+        training_data (list): 2D list of lists containing training data
+        classes (list): All possible classes
+    
+    Returns:
+        float: Evaluation metric
+    """
 
     # keep a counter of correct instances found
     correct = 0
@@ -343,7 +467,16 @@ def evaluate_unsupervised(distributions, training_data, classes):
 
 # This function gets all the csv files in the current directory
 def get_datasets(extension='.csv'):
-
+    """Extracts all csv files from current directory and returns them.
+    It is assumed that the datasets will all be csv, hence the
+    default file extension above. Returns list of files in alphabetical order. 
+    
+    Args:
+        extension (str, optional): Default extension
+    
+    Returns:
+        list: Alphabetically sorted files contained in a list
+    """
     files = []
 
     # go through all items in current directorys
@@ -358,12 +491,15 @@ def get_datasets(extension='.csv'):
 
 # This function is the main driver of program
 def main():
-
-    # obtain all datasets in current directory
-    datasets = get_datasets()
+    """Driver function which runs all the above function in order of files.
+    Outputs all results onto the screen for referencing. 
+    """
 
     # print header
     print('----------------------------------------------')
+
+    # obtain all datasets in current directory
+    datasets = get_datasets()
 
     # go through each file
     for file in datasets:
@@ -405,6 +541,7 @@ def main():
 
         evaluate = evaluate_unsupervised(distributions, data, classes)
 
+        # normal unsupervised accuracy
         print('unsupervised NB accuracy: %f' % (evaluate))
 
         # deterministic accuracy
@@ -416,5 +553,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
