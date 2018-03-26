@@ -29,7 +29,30 @@ def preprocess(filename):
         for line in csv_reader:
             lines.append(line)
 
-    return lines
+    # return cleaned csv data
+    return clean(lines)
+
+# This function cleans training data
+def clean(training_data):
+    cleansed_data = []
+
+    # transpose training data for imputation
+    # make columns rows instead for easier access and manipulation
+    for column in zip(*training_data):
+
+        # count elements in each column
+        # remove '?' character from counts
+        # get most common item in column
+        counts = Counter(column)
+        counts.pop('?', None)
+        common = counts.most_common(1)[0][0]
+
+        # imputate invalid data with max occuring data in column
+        new_column = [common if val == '?' else val for val in column]
+        cleansed_data.append(new_column)
+
+    # transpose modified data back into rows
+    return list(map(list, zip(*cleansed_data)))
 
 # This function should build a supervised NB model
 def train_supervised(training_data):
@@ -164,30 +187,8 @@ def construct_posteriers_unsupervised(priors, distributions, training_data):
 
     return posteriers
 
-# This function cleans training data
-def clean(training_data):
-    cleansed_data = []
-
-    # transpose training data for imputation
-    # make columns rows instead for easier access and manipulation
-    for column in zip(*training_data):
-
-        # count elements in each column
-        # remove '?' character from counts
-        # get most common item in column
-        counts = Counter(column)
-        counts.pop('?', None)
-        common = counts.most_common(1)[0][0]
-
-        # imputate invalid data with max occuring data in column
-        new_column = [common if val == '?' else val for val in column]
-        cleansed_data.append(new_column)
-
-    # transpose modified data back into rows
-    return list(map(list, zip(*cleansed_data)))
-
 # This function deterministically assigns classes for the supervised NB model
-def deterministic_supervised(training_data, classes):
+def deterministic_unsupervised(training_data, classes):
 
     # return random classes to each instance
     return [inst[:-1] + [random.choice(classes)] for inst in training_data]
@@ -293,6 +294,8 @@ def output_confusion_matrix(matches, guesses, classes):
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.show()
+
+    return cm
     
 # This function should evaluate a set of predictions, in an unsupervised manner
 def evaluate_unsupervised(distributions, training_data, classes):
@@ -321,9 +324,21 @@ def evaluate_unsupervised(distributions, training_data, classes):
         matches.append(class_col)
 
     # output a confusion matrix
-    print('Confusion matrix:')
-    output_confusion_matrix(matches, guesses, classes)
+    cm = output_confusion_matrix(matches, guesses, classes)
 
+    # calculate a the confusion accuracy
+    # this requires transposing the matrix
+    # and totalling the max item over the sum
+    correct_guesses = 0
+    total_sum = 0
+    for row in cm.transpose():
+        correct_guesses += max(row)
+        total_sum += sum(row)
+
+    # output the confusion accuracy
+    print('unsupervised confusion accuracy: %f' % (correct_guesses/total_sum))
+
+    # return the actual accuracy
     return correct/len(training_data)
 
 # This function gets all the csv files in the current directory
@@ -343,15 +358,20 @@ def get_datasets(extension='.csv'):
 
 # This function is the main driver of program
 def main():
+
+    # obtain all datasets in current directory
     datasets = get_datasets()
 
+    # print header
+    print('----------------------------------------------')
+
+    # go through each file
     for file in datasets:
+
+        # preprocess each file
         data = preprocess(file)
 
-        #imputate invalid data
-        data = clean(data)
-
-        # SUPERVISED
+        # SUPERVISED SECTION
         priors, posteriers = train_supervised(data)
 
         evaluate = evaluate_supervised(priors, posteriers, data)
@@ -360,34 +380,39 @@ def main():
         print('supervised NB accuracy: %f' % (evaluate))
 
         # cross validation for supervised NB
+        # used 10 as k here
         K = 10
-        print('cross validation supervised: %f' % (cross_validation(data, K)))
+        print('supervised cross validation: %f' % (cross_validation(data, K)))
 
-        # UNSUPERVISED
-        priors, posteriers, distributions, training_data, classes = train_unsupervised(data)
+        # UNSUPERVISED SECTION
+        priors, posteriers, distributions, training_data, classes = (
+        train_unsupervised(data))
 
+        # iterations for predictions
+        # only two iterations were performed
         ITERATIONS = 2
-        count = 0
-        while count < ITERATIONS:
+
+        # perform 2 iterations of predictions
+        for i in range(ITERATIONS):
+            # get new posteriers and distributions
             posterier_temp, distribution_temp = predict_unsupervised(priors,
-                                                                     posteriers, 
-                                                                     distributions, 
-                                                                     training_data)
-
+                                                                posteriers, 
+                                                                distributions, 
+                                                                training_data)
+            
+            # update actual posteriers and distributions
             posteriers, distributions = posterier_temp, distribution_temp
-
-            count += 1
 
         evaluate = evaluate_unsupervised(distributions, data, classes)
 
-        print('unsupervised NB accurary: %f' % (evaluate))
+        print('unsupervised NB accuracy: %f' % (evaluate))
 
-        # UNSUPERVISED deterministic
-        data = deterministic_supervised(data, classes)
+        # deterministic accuracy
+        data = deterministic_unsupervised(data, classes)
         priors, posteriers = train_supervised(data)
         evaluate = evaluate_supervised(priors, posteriers, data)
         print('deterministic supervised accuracy: %f\n' % (evaluate))
-        print('-----------------------------------------------------------------------')
+        print('----------------------------------------------')
 
 if __name__ == '__main__':
     main()
