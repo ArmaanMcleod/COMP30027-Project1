@@ -321,6 +321,7 @@ def evaluate_unsupervised(distributions, training_data, classes):
         matches.append(class_col)
 
     # output a confusion matrix
+    print('Confusion matrix:')
     output_confusion_matrix(matches, guesses, classes)
 
     return correct/len(training_data)
@@ -356,11 +357,11 @@ def main():
         evaluate = evaluate_supervised(priors, posteriers, data)
 
         print(file)
-        print('supervised: %f' % (evaluate))
+        print('supervised NB accuracy: %f' % (evaluate))
 
         # cross validation for supervised NB
         K = 10
-        print('cross validation: %f' % (cross_validation(data, K)))
+        print('cross validation supervised: %f' % (cross_validation(data, K)))
 
         # UNSUPERVISED
         priors, posteriers, distributions, training_data, classes = train_unsupervised(data)
@@ -379,13 +380,14 @@ def main():
 
         evaluate = evaluate_unsupervised(distributions, data, classes)
 
-        print('unsupervised: %f' % (evaluate))
+        print('unsupervised NB accurary: %f' % (evaluate))
 
         # UNSUPERVISED deterministic
         data = deterministic_supervised(data, classes)
         priors, posteriers = train_supervised(data)
         evaluate = evaluate_supervised(priors, posteriers, data)
-        print('deterministic supervised: %f\n' % (evaluate))
+        print('deterministic supervised accuracy: %f\n' % (evaluate))
+        print('-----------------------------------------------------------------------')
 
 if __name__ == '__main__':
     main()
