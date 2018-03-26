@@ -496,6 +496,7 @@ def main():
     """
 
     # print header
+    print('RESULTS:')
     print('----------------------------------------------')
 
     # obtain all datasets in current directory
