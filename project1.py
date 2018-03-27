@@ -338,9 +338,6 @@ def predict_unsupervised(priors, posteriers, distributions, training_data):
         distributions.
     """
 
-    # epsilon value for smoothing
-    EPSILON = 0.000000000001
-
     # convert fractions to probabilities
     probs = {cs: cnt / len(training_data) for cs, cnt in priors.items()}
 
@@ -364,8 +361,6 @@ def predict_unsupervised(priors, posteriers, distributions, training_data):
         # normalise distribution into probabilities
         for class_name, new_dist in zip(distribution, new_dists):
             distribution[class_name] = new_dist / sum(new_dists)
-
-
 
     # recreate posteriers with new distributions
     new_posteriers = construct_posteriers_unsupervised(priors, 
