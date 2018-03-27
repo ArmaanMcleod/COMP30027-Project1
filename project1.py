@@ -10,14 +10,12 @@ import matplotlib.pyplot as plt
 from math import log
 from csv import reader
 from random import choice
-from pprint import pprint
 from itertools import chain
 from operator import itemgetter
 from collections import Counter
 from collections import defaultdict
 from collections import OrderedDict
 from sklearn.metrics import confusion_matrix
-
 
 def preprocess(filename):
     """Opens dataset and transforms it into a usable format. The format given
@@ -167,6 +165,7 @@ def predict_supervised(priors, posteriers, instance):
             else:
                 product *= EPSILON
 
+        # log transformation
         class_max[class_name] = log(product) + log(priors[class_name])
 
     # return a tuple of the class and maximal probability
