@@ -7,6 +7,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+from math import log
 from csv import reader
 from random import choice
 from pprint import pprint
@@ -165,7 +166,8 @@ def predict_supervised(priors, posteriers, instance):
             else:
                 product *= EPSILON
 
-        class_max[class_name] = product * priors[class_name]
+        # apply log transformation
+        class_max[class_name] = log(priors[class_name]) + log(product)
 
     # return a tuple of the class and maximal probability
     return max(class_max.items(), key=itemgetter(1))
@@ -336,6 +338,9 @@ def predict_unsupervised(priors, posteriers, distributions, training_data):
         distributions.
     """
 
+    # epsilon value for smoothing
+    EPSILON = 0.000000000001
+
     # convert fractions to probabilities
     probs = {cs: cnt / len(training_data) for cs, cnt in priors.items()}
 
@@ -359,6 +364,8 @@ def predict_unsupervised(priors, posteriers, distributions, training_data):
         # normalise distribution into probabilities
         for class_name, new_dist in zip(distribution, new_dists):
             distribution[class_name] = new_dist / sum(new_dists)
+
+
 
     # recreate posteriers with new distributions
     new_posteriers = construct_posteriers_unsupervised(priors, 
@@ -465,7 +472,6 @@ def evaluate_unsupervised(distributions, training_data, classes):
     # return the actual accuracy
     return correct/len(training_data)
 
-# This function gets all the csv files in the current directory
 def get_datasets(extension='.csv'):
     """Extracts all csv files from current directory and returns them.
     It is assumed that the datasets will all be csv, hence the
