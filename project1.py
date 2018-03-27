@@ -19,8 +19,8 @@ from sklearn.metrics import confusion_matrix
 
 def preprocess(filename):
     """Opens dataset and transforms it into a usable format. The format given
-    back is 2D list of strings, where each list is a row in the file. When
-    this 2D is created. Returns this data in a cleaned format. 
+    back is 2D list of strings, where each list is a row in the file. 
+    Returns this data in a cleaned format. 
     
     Args:
         filename (str): dataset
