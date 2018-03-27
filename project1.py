@@ -18,6 +18,7 @@ from collections import defaultdict
 from collections import OrderedDict
 from sklearn.metrics import confusion_matrix
 
+
 def preprocess(filename):
     """Opens dataset and transforms it into a usable format. The format given
     back is 2D list of strings, where each list is a row in the file. 
@@ -166,8 +167,7 @@ def predict_supervised(priors, posteriers, instance):
             else:
                 product *= EPSILON
 
-        # apply log transformation
-        class_max[class_name] = log(priors[class_name]) + log(product)
+        class_max[class_name] = log(product) + log(priors[class_name])
 
     # return a tuple of the class and maximal probability
     return max(class_max.items(), key=itemgetter(1))
@@ -384,9 +384,22 @@ def output_confusion_matrix(matches, guesses, classes):
 
     # create confusion matrix
     cm = confusion_matrix(matches, guesses, labels=classes)
+    
+    # calculate a the accuracy using confusion matrix
+    # this requires transposing the matrix
+    # and totalling the max item over the sum
+    correct_guesses = 0
+    total_sum = 0
+    for row in cm.transpose():
+        correct_guesses += max(row)
+        total_sum += sum(row)
+
+    # output the confusion accuracy
+
+    
     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     plt.imshow(cm,cmap= plt.cm.Greens)
-  
+
     # set axis
     plt.colorbar()
     tick_marks = np.arange(len(classes))
@@ -401,12 +414,16 @@ def output_confusion_matrix(matches, guesses, classes):
         for y in range(height):
             plt.annotate('%.4f' % cm[x][y], xy=(y, x), 
                         horizontalalignment='center',
-                        verticalalignment='center')
+                        verticalalignment='center') 
 
     # create labels and show matrix
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+    plt.title('Normalised confusion matrix for dataset')
     plt.show()
+    
+    print('unsupervised accuracy (from confusion matrix): %f' % 
+          (correct_guesses/total_sum))
 
     # return actual matrix
     return cm
@@ -452,21 +469,12 @@ def evaluate_unsupervised(distributions, training_data, classes):
     # output a confusion matrix
     cm = output_confusion_matrix(matches, guesses, classes)
 
-    # calculate a the confusion accuracy
-    # this requires transposing the matrix
-    # and totalling the max item over the sum
-    correct_guesses = 0
-    total_sum = 0
-    for row in cm.transpose():
-        correct_guesses += max(row)
-        total_sum += sum(row)
-
-    # output the confusion accuracy
-    print('unsupervised confusion accuracy: %f' % (correct_guesses/total_sum))
+   
 
     # return the actual accuracy
     return correct/len(training_data)
 
+# This function gets all the csv files in the current directory
 def get_datasets(extension='.csv'):
     """Extracts all csv files from current directory and returns them.
     It is assumed that the datasets will all be csv, hence the
@@ -497,7 +505,6 @@ def main():
     """
 
     # print header
-    print('RESULTS:')
     print('----------------------------------------------')
 
     # obtain all datasets in current directory
@@ -544,7 +551,8 @@ def main():
         evaluate = evaluate_unsupervised(distributions, data, classes)
 
         # normal unsupervised accuracy
-        print('unsupervised NB accuracy: %f' % (evaluate))
+        print('unsupervised NB accuracy (without confusion matrix): %f' 
+               % (evaluate))
 
         # deterministic accuracy
         data = deterministic_unsupervised(data, classes)
