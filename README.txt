@@ -1,3 +1,8 @@
+Group Members:
+
+* Armaan Dhaliwal-Mcleod 837674
+* Bilal Sheheta 834720
+
 File Structure:
 
 * .csv files are the datasets
