@@ -1,6 +1,7 @@
 # Project 1: Supervised and unsupervised Naive Bayes classifiers
 # Subject: COMP30027 Machine Learning, 2018 Semester 1
 # Authors: Bilal Sheheta and Armaan Dhaliwal-McLeod
+# Use Python 3 to run
 
 # all script imports below
 import os
