@@ -1,2 +1,2 @@
 submit:
-	git archive --format=zip HEAD > submission.zip
+	git archive --format=zip -o submission.zip -9 HEAD
